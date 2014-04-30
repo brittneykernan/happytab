@@ -3,22 +3,28 @@
 	WIP April 2014
 	Jeanelle Mak X Brittney Kernan
 */
+
+// Collection of Cutie Models
+// Models are just urls for now
 var CutieCollection = [];
 
 // Controller for Collection of URLs
 var CutieCollectionController = {
+	storageKey : 'URLs',
 	// get from localstorage
 	// params
 	// ----
 	// callback {function} *optional what to do collection gotten
 	get: function(callback) {
 		var self = this;
-		chrome.storage.local.get('URLs',function(items) {
+		chrome.storage.local.get(self.storageKey,function(storage) {
 		  // if not, get from server
-		  if( self.empty(items.URLs) ) 
+		  if( self.empty(storage[self.storageKey]) ) 
 		  	return self.fetch(callback); // only get's here on first load of extension, otherwise reloads after image is shown
-		  else 
-		  	return showNextCutie(items.URLs);
+		  else {
+		  	if(typeof(callback) == 'function')	
+			  	return callback(storage[self.storageKey]);
+		  }
 		});
 	},
 
@@ -27,21 +33,27 @@ var CutieCollectionController = {
 	// also make sure more are loaded for next time
 	// params
 	// ----
-	// callback {function} what to do model gotten
+	// callback {function} *required what to do model gotten
 	// returns
 	// ----
 	// one model
 	getOne: function(callback) {
-		var model = CutieCollection.pop()
-		
-		// check for more if array 0 or update array with 1 less item
-		if( outOfCuties(CutieCollection) ) 
-	  	this.fetch(); // only get's here on first load of extension, otherwise reloads after image is shown
-	  else 
-	  	set(CutieCollection);	
+		// get collection from storage
+		this.get(function() {
+			var model = CutieCollection.pop()
+			
+			// check for more if array 0 or update array with 1 less item
+			if( this.empty(CutieCollection) ) 
+		  	this.fetch(); // only get's here on first load of extension, otherwise reloads after image is shown
+		  else 
+		  	this.set(CutieCollection);	
 
-	  return 
-	}
+		  if(typeof(callback) != 'function')
+		  	return console.error('CutieCollectionController.getOne requires a callback argument');
+
+		  return callback(model);
+		});
+	},
 
 	// set to localstorage
 	// params
@@ -50,6 +62,9 @@ var CutieCollectionController = {
 	// callback {function} *optional what to do when collection is set
 	set: function(collection, callback) {
 		chrome.storage.local.set({'URLs': collection}, function() {
+			// set local reference
+			CutieCollection = collection;
+
 		  // Notify that we saved.
 		  message('HappyTab URL array updated, new length: ' + collection.length);
 		  
@@ -57,7 +72,7 @@ var CutieCollectionController = {
 		  if( typeof(callback) == 'function' )
 		  	callback();
 		});
-	}
+	},
 
 	// get from server
 	// params
@@ -77,7 +92,7 @@ var CutieCollectionController = {
 		} 
 		xhr.open("GET", chrome.extension.getURL('/scripts/todays-cuties.json'), true);
 		xhr.send();
-	}
+	},
 
 	// check if collection empty
 	// params
@@ -92,10 +107,11 @@ var CutieCollectionController = {
 var HappyTab = {
 	view: document.body,
 	init: function() {
-		CutieCollectionController.getOne(this.showCutie);
+		var self = this;
+		CutieCollectionController.getOne(self.showCutie);
 	},
-	showCutie: function(url) {
-		this.view.style.backgroundImage = 'url(' + url + ')';
+	showCutie: function(cutie) {
+		this.view.style.backgroundImage = 'url(' + cutie + ')';
 	}
 }
 
