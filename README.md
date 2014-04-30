@@ -1,10 +1,10 @@
 HappyTab
 =========
 
-#Install Demo
+##Install Demo
 chrome://extensions/
 
-#Develop 
+##Develop 
 npm install
 
 Chrome Extension for new tabs
