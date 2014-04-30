@@ -13,23 +13,30 @@ var CutieCollection = {
 			chrome.storage.local.get( key, callback )
 		else {
 			var val = localStorage.getItem(key);
-			callback(this.format(key,val));
+			callback(this.decode(key,val));
 		}
 	},
 	set: function(key,val,callback) {
-		if( HappyTab.isExtension() ) 
-			chrome.storage.local.set({ key:val }, callback)
-		else {
+		if( HappyTab.isExtension() ) {
+			chrome.storage.local.set(this.encode(key,val), callback)
+		} else {
 			localStorage.setItem(key,val);
 			callback()
 		}
 	},
-	// ensure get returns right format
-	format: function( key,val ) {		
-		var value = {key:''}
+	encode: function( key,val ) {		
+		var obj = {}
+		obj[key] = val;
+		return obj;
+	},
+	// ensure get returns right format for save
+	decode: function( key,val ) {		
+		var obj = {};
 		if( val != null )
-			 value[key] = val.split(',');
-		return value;
+			obj[key] = val.split(',');
+		else 
+			obj[key] = '';
+		return obj;
 	}
 }
 
@@ -87,10 +94,8 @@ var CutieCollectionController = {
 	// collection {array} updated collection
 	// callback {function} *optional what to do when collection is set
 	set: function(collection, callback) {
-		CutieCollection.set(this.storageKey, collection, function() {
-		  // Notify that we saved.
-		  //message('HappyTab URL array updated, new length: ' + collection.length);
-		  
+		CutieCollection.set(this.storageKey, collection, function() {	
+
 		  // when storage is set
 		  if( typeof(callback) == 'function' )
 		  	callback(collection);
