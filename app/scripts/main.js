@@ -72,7 +72,7 @@ var CutieCollectionController = {
 		  
 		  // when storage is set
 		  if( typeof(callback) == 'function' )
-		  	callback();
+		  	callback(collection);
 		});
 	},
 
