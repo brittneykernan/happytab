@@ -2,9 +2,9 @@ HappyTab
 =========
 
 ##Install Demo
-# [Download latest .zip](https://github.com/brittneykernan/happytab/tree/master/package)
-# [Extensions](chrome://extensions/)
-# Drag expanded zip into Extensions page
+1. [Download latest .zip](https://github.com/brittneykernan/happytab/tree/master/package)
+2. [Extensions](chrome://extensions/)
+3. Drag expanded zip into Extensions page
 
 ##Develop 
 npm install
