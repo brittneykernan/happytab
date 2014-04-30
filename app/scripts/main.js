@@ -5,9 +5,40 @@
 */
 
 // Collection of Cutie Models
+// interfaces with local storage
 // Models are just urls for now
-// not really used right now since the model is so simple
-var CutieCollection = [];
+var CutieCollection = {
+	get: function(key,callback) {
+		if( HappyTab.isExtension() )
+			chrome.storage.local.get( key, callback )
+		else {
+			var val = localStorage.getItem(key);
+			callback(this.decode(key,val));
+		}
+	},
+	set: function(key,val,callback) {
+		if( HappyTab.isExtension() ) {
+			chrome.storage.local.set(this.encode(key,val), callback)
+		} else {
+			localStorage.setItem(key,val);
+			callback()
+		}
+	},
+	encode: function( key,val ) {		
+		var obj = {}
+		obj[key] = val;
+		return obj;
+	},
+	// ensure get returns right format for save
+	decode: function( key,val ) {		
+		var obj = {};
+		if( val != null )
+			obj[key] = val.split(',');
+		else 
+			obj[key] = '';
+		return obj;
+	}
+}
 
 // Controller for Collection of URLs
 var CutieCollectionController = {
@@ -18,15 +49,15 @@ var CutieCollectionController = {
 	// callback {function} *optional what to do collection gotten
 	get: function(callback) {
 		var self = this;
-		chrome.storage.local.get(self.storageKey,function(storage) {
+		CutieCollection.get(self.storageKey,function(store) {
 		  // if not, get from server
-		  if( self.empty(storage[self.storageKey]) ) 
+		  if( self.empty(store[self.storageKey]) ) 
 		  	return self.fetch(callback); // only get's here on first load of extension, otherwise reloads after image is shown
 		  else {
 		  	if(typeof(callback) == 'function')	
-			  	return callback(storage[self.storageKey]);
+			  	return callback(store[self.storageKey]);
 		  }
-		});
+		})
 	},
 
 	// return one collection model
@@ -63,13 +94,8 @@ var CutieCollectionController = {
 	// collection {array} updated collection
 	// callback {function} *optional what to do when collection is set
 	set: function(collection, callback) {
-		chrome.storage.local.set({'URLs': collection}, function() {
-			// set local reference
-			CutieCollection = collection;
+		CutieCollection.set(this.storageKey, collection, function() {	
 
-		  // Notify that we saved.
-		  //message('HappyTab URL array updated, new length: ' + collection.length);
-		  
 		  // when storage is set
 		  if( typeof(callback) == 'function' )
 		  	callback(collection);
@@ -92,7 +118,9 @@ var CutieCollectionController = {
 		    self.set(array, callback);
 		  }
 		} 
-		xhr.open("GET", chrome.extension.getURL('/scripts/todays-cuties.json'), true);
+		var path = 'scripts/todays-cuties.json',
+		    url = (chrome.extension) ? chrome.extension.getURL(path) : 'app/'+path;
+		xhr.open("GET", url, true);
 		xhr.send();
 	},
 
@@ -101,7 +129,7 @@ var CutieCollectionController = {
 	// ----
 	// obj {Object} empty localstorage set, or array
 	empty: function(obj) {
-		return obj == undefined || obj == '' || obj.length == 0;
+		return obj == null ||  obj == undefined || obj == '' || obj.length == 0;
 	}
 }
 
@@ -113,6 +141,9 @@ var HappyTab = {
 	},
 	showCutie: function(cutie) {
 		document.body.style.backgroundImage = 'url(' + cutie + ')';
+	},
+	isExtension: function() {
+		return chrome.storage != undefined;
 	}
 }
 
