@@ -6,6 +6,7 @@
 
 // Collection of Cutie Models
 // Models are just urls for now
+// not really used right now since the model is so simple
 var CutieCollection = [];
 
 // Controller for Collection of URLs
@@ -38,15 +39,16 @@ var CutieCollectionController = {
 	// ----
 	// one model
 	getOne: function(callback) {
+		var self = this;
 		// get collection from storage
-		this.get(function() {
-			var model = CutieCollection.pop()
+		this.get(function(collection) {
+			var model = collection.pop();
 			
 			// check for more if array 0 or update array with 1 less item
-			if( this.empty(CutieCollection) ) 
-		  	this.fetch(); // only get's here on first load of extension, otherwise reloads after image is shown
+			if( self.empty(collection) ) 
+		  	self.fetch(); // only get's here on first load of extension, otherwise reloads after image is shown
 		  else 
-		  	this.set(CutieCollection);	
+		  	self.set(collection);	
 
 		  if(typeof(callback) != 'function')
 		  	return console.error('CutieCollectionController.getOne requires a callback argument');
@@ -66,7 +68,7 @@ var CutieCollectionController = {
 			CutieCollection = collection;
 
 		  // Notify that we saved.
-		  message('HappyTab URL array updated, new length: ' + collection.length);
+		  //message('HappyTab URL array updated, new length: ' + collection.length);
 		  
 		  // when storage is set
 		  if( typeof(callback) == 'function' )
@@ -105,86 +107,13 @@ var CutieCollectionController = {
 
 // App Controller
 var HappyTab = {
-	view: document.body,
 	init: function() {
 		var self = this;
 		CutieCollectionController.getOne(self.showCutie);
 	},
 	showCutie: function(cutie) {
-		this.view.style.backgroundImage = 'url(' + cutie + ')';
+		document.body.style.backgroundImage = 'url(' + cutie + ')';
 	}
 }
 
-function start() {
-	// get cuties then show the next one
-	//getCuties();
-	HappyTab.init()
-}
-
-function getCuties() {
-	// see if the user has cuties stored left to see
-	chrome.storage.local.get('URLs',function(items) {
-	  // if not, get from server
-	  if( outOfCuties(items.URLs) ) 
-	  	return getCutiesFromServer(); // only get's here on first load of extension, otherwise reloads after image is shown
-	  else 
-	  	return showNextCutie(items.URLs);
-	});
-}
-
-// check what's in (or not in) storage to see if array is set
-// value {object} value in local storage
-// return bool true if need to download list from server
-function outOfCuties(value) {
-	return value == undefined || value == '' || value.length == 0;
-}
-
-// retrieve from packaged extension
-// will change this to requst from server
-function getCutiesFromServer(callback) {
-	var xhr = new XMLHttpRequest();
-	xhr.onreadystatechange = function() {
-	  if (xhr.readyState == 4) {
-	    // string to json/array
-	    var array = JSON.parse(xhr.responseText);
-	    // save as array to storage	    
-	    setCuties(array, callback);
-	  }
-	} 
-	xhr.open("GET", chrome.extension.getURL('/scripts/todays-cuties.json'), true);
-	xhr.send();
-}
-
-// Saves current Array of URLs to local storage
-// cuttiesArray {array} Array of URLs to images
-// callback {function} *optional what to do when storage is set 
-function setCuties(cuttiesArray, callback) {
-	chrome.storage.local.set({'URLs': cuttiesArray}, function() {
-	  // Notify that we saved.
-	  message('HappyTab URL array updated, new length: ' + cuttiesArray.length);
-	  
-	  // when storage is set
-	  if( typeof(callback) == 'function' )
-	  	callback();
-	});
-}
-
-// Pops a URL off the array, shows it, and 
-// updates storage with the shortened by one array
-// or gets more
-// cuttiesArray {array} Array of URLs to images
-function showNextCutie(cuttiesArray) {
-	var cutie = cuttiesArray.pop()
-	// show a url
-	document.body.style.backgroundImage = 'url(' + cutie + ')';
-	
-	// check for more if array 0 or update array with 1 less item
-	if( outOfCuties(cuttiesArray) ) 
-  	return getCutiesFromServer(); // only get's here on first load of extension, otherwise reloads after image is shown
-  else 
-  	return setCuties(cuttiesArray);	
-}
-
-start()
-
-
+HappyTab.init()
